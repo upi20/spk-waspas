@@ -27,7 +27,7 @@ if (!isset($route)) die;
 
 <body class="hold-transition login-page">
     <!-- pilih kasus -->
-    <div class="login-box">
+    <div class="login-box" id="display-list-kasus">
         <div class="login-logo">
             <a href="#"><b>SPK</b></a>
             <h5>METODE WASPAS (WEIGHTED AGGREGATED SUM PRODUCT ASSESSMENT)</h5>
@@ -43,15 +43,15 @@ if (!isset($route)) die;
                 </ul>
 
                 <!-- Button -->
-                <button type="button" class="btn btn-primary btn-block mt-3 btn-buat-studi-kasus-baru">Buat studi kasus baru</button>
-                <button class="btn btn-block btn-danger" id="edit"> Edit </button>
+                <button type="button" class="btn btn-primary btn-block mt-3" onclick="changeDisplay('display-form-baru')">Buat studi kasus baru</button>
+                <button class="btn btn-block btn-secondary" onclick="changeDisplay('display-list-kasus-edit')"> Edit </button>
             </div>
             <!-- /.login-card-body -->
         </div>
     </div>
 
     <!-- Buat Baru -->
-    <div class="register-box" style="display: none;">
+    <div class="register-box" id='display-form-baru' style="display: none;">
         <div class="register-logo">
             <a href="#">Buat studi kasus baru</a>
         </div>
@@ -63,7 +63,7 @@ if (!isset($route)) die;
                         <label for="baru-keterangan">Nama Studi Kasus</label>
                         <input type="text" class="form-control" placeholder="Nama" id="baru-nama" name="baru-nama">
                         <div class="invalid-feedback">
-                            Nama studi kasus sudah ada dan kolom tidak boleh kosong.
+                            Nama studi kasus sudah ada atau kolom tidak boleh kosong.
                         </div>
                     </div>
                     <div class="form-group">
@@ -73,18 +73,75 @@ if (!isset($route)) die;
                 </form>
 
                 <div class="social-auth-links text-center">
-                    <button class="btn btn-block btn-primary" id="buat">
+                    <button class="btn btn-block btn-primary" onclick="simpanKasusBaru()">
                         Buat Studi Kasus Baru
                     </button>
-                    <button class="btn btn-block btn-danger" id="batal">
+                    <button class="btn btn-block btn-secondary" onclick="changeDisplay('display-list-kasus')">
                         Batal </button>
                 </div>
             </div>
-            <!-- /.form-box -->
-        </div><!-- /.card -->
+        </div>
     </div>
-    <!-- /.login-box -->
 
+    <!-- kasus edit -->
+    <div class="login-box" id="display-list-kasus-edit" style="display: none">
+        <!-- /.login-logo -->
+        <div class="card">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">Edit sutdi kasus</p>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Studi kasus</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studi-kasus-edit">
+
+                    </tbody>
+                </table>
+
+                <!-- Button -->
+                <button type="button" class="btn btn-secondary btn-block mt-3" onclick="changeDisplay('display-list-kasus')">Batal</button>
+            </div>
+            <!-- /.login-card-body -->
+        </div>
+    </div>
+
+    <!-- editor display -->
+    <div class="register-box" id='display-form-edit-studi-kasus' style="display: none;">
+        <div class="register-logo">
+            <a href="#">Edit studi kasus</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body register-card-body">
+                <form id="form-edit">
+                    <div class="form-group mb-3">
+                        <input type="text" class="form-control" style="display: none;" id="edit-id" name="edit-id">
+                        <input type="text" class="form-control" style="display: none;" id="edit-nama-asal" name="edit-nama-asal">
+                        <label for="edit-keterangan">Nama Studi Kasus</label>
+                        <input type="text" class="form-control" placeholder="Nama" id="edit-nama" name="edit-nama">
+                        <div class="invalid-feedback">
+                            Nama studi kasus sudah ada atau kolom tidak boleh kosong.
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="baru-keterangan">Keterangan</label>
+                        <textarea class="form-control" id="edit-keterangan" name="edit-keterangan" rows="3"></textarea>
+                    </div>
+                </form>
+
+                <div class="social-auth-links text-center">
+                    <button class="btn btn-block btn-primary" onclick="simpanEdit()">
+                        Edit Studi Kasus Baru
+                    </button>
+                    <button class="btn btn-block btn-secondary" onclick="changeDisplay('display-list-kasus-edit')">
+                        Batal </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <!-- jQuery -->
@@ -98,7 +155,13 @@ if (!isset($route)) die;
     <!-- sweetalert -->
     <script src="./pages/assets/plugins/sweetalert2/sweetalert2.min.js"></script>
     <script>
-        let kumpulanNamaStudiKasus = [];
+        // setting
+        let studiKasus = [];
+        const displayDefault = 'display-list-kasus';
+        let currentDisplay = displayDefault;
+        let currentName = '';
+
+        // loading display
         $(document).ajaxStart(function() {
             $.LoadingOverlay("show");
         });
@@ -106,6 +169,164 @@ if (!isset($route)) die;
             $.LoadingOverlay("hide");
         });
 
+        // pemilihan display
+        const changeDisplay = (d) => {
+            $('#' + currentDisplay).fadeOut(200, () => {
+                $('#' + d).fadeIn(200);
+                currentDisplay = d;
+            });
+        }
+
+        // render list kasus
+        const renderListKasus = () => {
+            let html = `
+                <li class="nav-item active">
+                    Studi Kasus
+                    <span class="float-right">Terakhir diakses</span>
+                </li>
+                `;
+
+            studiKasus.forEach((e) => {
+                html += `
+                    <li class="nav-item">
+                            <a href="?kasus=${e.id}" class="nav-link">
+                                <i class="far fa-file-alt"></i> ${e.kasus_nama}
+                                <span class="float-right">${e.terakhir_diakses}</span>
+                            </a>
+                        </li>
+                    `;
+            });
+            $('#studi-kasus-list').html(html);
+        }
+
+        // render list kasus edit
+        const renderListKasusEdit = () => {
+            let html = ``;
+
+            studiKasus.forEach((e) => {
+                html += `
+                        <tr>
+                            <td>
+                                ${e.kasus_nama}
+                            </td>
+                            <td  class="text-nowrap">                        
+                                <button type="button" class="btn btn-sm btn-warning" onclick="studiKasusBtnEditHandle(${e.id})"><i class="fas fa-pencil-alt"></i></button>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="studiKasusBtnDeleteHandle(${e.id})"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+            });
+            $('#studi-kasus-edit').html(html);
+        }
+
+        // button studi kasus handle
+        function studiKasusBtnEditHandle(id) {
+            studiKasus.forEach((e) => {
+                if (e.id == id) {
+                    changeDisplay('display-form-edit-studi-kasus');
+                    $('#edit-id').val(e.id);
+                    $('#edit-nama').val(e.kasus_nama);
+                    $('#edit-nama-asal').val(e.kasus_nama);
+                    $('#edit-keterangan').val(e.deskripsi);
+                }
+            });
+        }
+
+        // Edit sutdi kasus aksi
+        function simpanEdit() {
+            let namaBaru = $('#edit-nama');
+            let namaAsal = $('#edit-nama-asal');
+            if ((namaAsal.val() == namaBaru.val()) ? false : (!cekNama(namaBaru.val()))) {
+                namaBaru.addClass('is-invalid');
+            } else {
+                namaBaru.removeClass('is-invalid');
+                var data = $('#form-edit').serialize();
+                $.ajax({
+                    url: '<?= base_url('api/index.php?api=kasus&aksi=edit') ?>',
+                    data: data,
+                    type: 'post',
+                    cache: false,
+                    dataType: 'json',
+                    success: function(response) {
+                        getListData();
+                        Swal.fire(
+                            'Berhasil',
+                            'Studi kasus berhasi diedit',
+                            'success'
+                        );
+                    },
+                    failed: function(xhr, ajaxOptions, thrownError) {
+                        Swal.fire(
+                            'Gagal',
+                            'Studi Kasus gagal diedit',
+                            'error'
+                        );
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        Swal.fire(
+                            'Gagal',
+                            'Studi Kasus gagal diedit',
+                            'error'
+                        );
+                    }
+                });
+            }
+        }
+
+        // button delete handle
+        function studiKasusBtnDeleteHandle(id) {
+            let nama = "";
+            const deleteAction = (id) => {
+                $.ajax({
+                    url: '<?= base_url('api/index.php?api=kasus&aksi=delete&id=') ?>' + id,
+                    type: 'get',
+                    cache: false,
+                    dataType: 'json',
+                    success: function(response) {
+                        getListData();
+                        Swal.fire(
+                            'Berhasil',
+                            'Studi kasus berhasi dihapus',
+                            'success'
+                        );
+                    },
+                    failed: function(xhr, ajaxOptions, thrownError) {
+                        Swal.fire(
+                            'Gagal',
+                            'Studi Kasus gagal dihapus',
+                            'error'
+                        );
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        Swal.fire(
+                            'Gagal',
+                            'Studi Kasus gagal dihapus',
+                            'error'
+                        );
+                    }
+                });
+            }
+
+            studiKasus.forEach((e) => {
+                if (e.id == id) {
+                    nama = e.kasus_nama;
+                }
+            });
+            Swal.fire({
+                title: 'Apakah anda yakin?',
+                text: `Anda akan menghapus seluruh data studi kasus ${nama.toUpperCase()}.!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.value == true) {
+                    deleteAction(id);
+                }
+            })
+        }
 
         // Get list data
         const getListData = async () => $.ajax({
@@ -114,27 +335,9 @@ if (!isset($route)) die;
             cache: false,
             dataType: 'json',
             success: function(response) {
-                let html = `
-                <li class="nav-item active">
-                    Studi Kasus
-                    <span class="float-right">Terakhir diakses</span>
-                </li>
-                `;
-                let namaStudiKasus = [];
-                response.data.forEach((e, i) => {
-                    namaStudiKasus[i] = e.kasus_nama;
-                    html += `
-                    <li class="nav-item">
-                            <a href="?kasus=${e.id}" class="nav-link">
-                                <i class="far fa-file-alt"></i> ${e.kasus_nama}
-                                <span class="float-right">${e.terakhir_diakses}</span>
-                            </a>
-                        </li>
-                    `;
-                });
-
-                $('#studi-kasus-list').html(html);
-                kumpulanNamaStudiKasus = namaStudiKasus;
+                studiKasus = response.data;
+                renderListKasus();
+                renderListKasusEdit();
             },
             failed: function(xhr) {
                 alert(xhr.status);
@@ -148,100 +351,56 @@ if (!isset($route)) die;
             if (typeof(namaBaru) != 'string') return true;
             if (namaBaru == '') return false;
             result = true;
-            kumpulanNamaStudiKasus.forEach((e) => {
-                if (e.toUpperCase() == namaBaru.toUpperCase()) result = false;
+            studiKasus.forEach((e) => {
+                if (e.kasus_nama.toUpperCase() == namaBaru.toUpperCase()) result = false;
             });
 
             return result;
         }
 
-        // button buat baru onclick
-        $(document).on('click', '.btn-buat-studi-kasus-baru', function() {
-            $('.login-box').fadeOut(200, () => {
-                $('.register-box').fadeIn(200);
-            });
-        });
-
-        // button batal onclick
-        $(document).on('click', '#batal', function() {
-            $('.register-box').fadeOut(200, () => {
-                $('.login-box').fadeIn(200);
-            });
-        });
-
         // Button buat kasus baru onclick
-        $(document).on('click', '#buat', function() {
+        function simpanKasusBaru() {
             let namaBaru = $('#baru-nama');
             if (!cekNama(namaBaru.val())) {
                 namaBaru.addClass('is-invalid');
             } else {
                 namaBaru.removeClass('is-invalid');
-                const eksekusi = async () => {
-                    var data = $('#form-buat').serialize();
-                    $.ajax({
-                        url: '<?= base_url('api/index.php?api=kasus&aksi=tambah') ?>',
-                        data: data,
-                        type: 'post',
-                        cache: false,
-                        dataType: 'json',
-                        success: function(response) {
-                            getListData();
-                            Swal.fire(
-                                'Berhasil',
-                                'Kasus baru berhasil ditambahkan',
-                                'success'
-                            );
+                var data = $('#form-buat').serialize();
+                $.ajax({
+                    url: '<?= base_url('api/index.php?api=kasus&aksi=tambah') ?>',
+                    data: data,
+                    type: 'post',
+                    cache: false,
+                    dataType: 'json',
+                    success: function(response) {
+                        getListData();
+                        Swal.fire(
+                            'Berhasil',
+                            'Kasus baru berhasil ditambahkan',
+                            'success'
+                        );
 
-                            $('#baru-nama').val('');
-                            $('#baru-keterangan').val('');
+                        $('#baru-nama').val('');
+                        $('#baru-keterangan').val('');
 
-                        },
-                        failed: function(xhr, ajaxOptions, thrownError) {
-                            Swal.fire(
-                                'Gagal',
-                                'Kasus baru gagal ditambahkan',
-                                'error'
-                            );
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            Swal.fire(
-                                'Gagal',
-                                'Kasus baru gagal ditambahkan',
-                                'error'
-                            );
-                        },
-                        complete: function() {
-                            $('#tambahSubkriteria').fadeOut(1000, function() {
-                                $('#tambah_nama').val('');
-                                $('#daftarSubkriteria').load('<?= base_url('subkriteria/lihat_subkriteria') ?>');
-                                $('#tambahSubkriteria').fadeIn(1000);
-                            });
-                        }
-                    });
-                }
-                $.LoadingOverlay("show");
-                eksekusi();
-                $.LoadingOverlay("hide");
-
+                    },
+                    failed: function(xhr, ajaxOptions, thrownError) {
+                        Swal.fire(
+                            'Gagal',
+                            'Kasus baru gagal ditambahkan',
+                            'error'
+                        );
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        Swal.fire(
+                            'Gagal',
+                            'Kasus baru gagal ditambahkan',
+                            'error'
+                        );
+                    }
+                });
             }
-        });
-
-        // Nama baru onclick
-        $('#baru-nama').on('keyup', function() {
-            if (cekNama($(this).val())) {
-                $(this).removeClass('is-invalid');
-            } else {
-                $(this).addClass('is-invalid');
-            }
-        });
-
-        $('#baru-nama').on('click', function() {
-            if (cekNama($(this).val())) {
-                $(this).removeClass('is-invalid');
-            } else {
-                $(this).addClass('is-invalid');
-            }
-        });
+        }
     </script>
 
 </body>
