@@ -329,20 +329,27 @@ if (!isset($route)) die;
         }
 
         // Get list data
-        const getListData = async () => $.ajax({
-            url: '<?= base_url('api/index.php?api=kasus&aksi=get-all-data') ?>',
-            type: 'get',
-            cache: false,
-            dataType: 'json',
-            success: function(response) {
-                studiKasus = response.data;
-                renderListKasus();
-                renderListKasusEdit();
-            },
-            failed: function(xhr) {
-                alert(xhr.status);
-            }
-        });
+        const getListData = async () => {
+            $.ajax({
+                url: '<?= base_url('api/index.php?api=kasus&aksi=get-all-data') ?>',
+                type: 'get',
+                cache: false,
+                dataType: 'json',
+                success: function(response) {
+                    studiKasus = response.data;
+                    renderListKasus();
+                    renderListKasusEdit();
+                },
+                failed: function(xhr) {
+                    alert(xhr.status);
+                },
+                error: function(xhr) {
+                    if (xhr.status == 404) studiKasus = [];
+                    renderListKasus();
+                    renderListKasusEdit();
+                }
+            });
+        }
         getListData();
 
 

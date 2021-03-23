@@ -1,7 +1,21 @@
 <?php
 $route = true;
-
+require_once './Module/Database.php';
 if (!isset($_GET['kasus'])) {
+    require_once "./pages/kasus/pilih_kasus.php";
+    die;
+}
+
+try {
+    // Query terakhir diakses
+    $id = ($_GET['kasus'] == "") ? 0 : $_GET['kasus'];
+    $query = DB::conn()->prepare("UPDATE `kasus` SET `terakhir_diakses` = current_timestamp() WHERE `kasus`.`id` = $id");
+    $query->execute();
+    if (!($query->rowCount())) {
+        require_once "./pages/kasus/pilih_kasus.php";
+        die;
+    }
+} catch (\Throwable $th) {
     require_once "./pages/kasus/pilih_kasus.php";
     die;
 }

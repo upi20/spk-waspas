@@ -3,7 +3,7 @@ class DB
 {
     public static function conn()
     {
-        $host = "localhost:3307";
+        $host = "127.0.0.1:3307";
         $dbname = "spk_waspas";
         $username = "root";
         $password = "";
