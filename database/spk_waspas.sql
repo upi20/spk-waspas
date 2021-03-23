@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3307
--- Waktu pembuatan: 21 Mar 2021 pada 13.01
+-- Waktu pembuatan: 23 Mar 2021 pada 09.33
 -- Versi server: 10.4.14-MariaDB
 -- Versi PHP: 7.2.34
 
@@ -30,7 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `alternatif` (
   `id` int(11) NOT NULL,
   `id_kasus` int(11) NOT NULL,
-  `alternatif_nama` varchar(255) DEFAULT NULL
+  `alternatif_nama` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
@@ -84,15 +84,21 @@ INSERT INTO `alternatif_nilai` (`id_kasus`, `id_kriteria`, `id_alternatif`, `nil
 
 CREATE TABLE `kasus` (
   `id` int(11) NOT NULL,
-  `kasus_nama` varchar(255) DEFAULT NULL
+  `kasus_nama` varchar(255) DEFAULT NULL,
+  `dibuat` timestamp NOT NULL DEFAULT current_timestamp(),
+  `terakhir_diakses` timestamp NOT NULL DEFAULT current_timestamp(),
+  `terakhir_diedit` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deskripsi` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data untuk tabel `kasus`
 --
 
-INSERT INTO `kasus` (`id`, `kasus_nama`) VALUES
-(1, 'Daya serap type hand phone');
+INSERT INTO `kasus` (`id`, `kasus_nama`, `dibuat`, `terakhir_diakses`, `terakhir_diedit`, `deskripsi`) VALUES
+(1, 'Hp dengan daya serap terbaik', '2021-03-21 12:30:58', '2021-03-22 12:42:56', '2021-03-22 10:23:01', ''),
+(2, 'Lurah terbaik', '2021-03-21 13:19:24', '2021-03-22 12:10:34', '2021-03-21 13:19:24', ''),
+(3, 'Siswa Terbaik', '2021-03-21 13:19:24', '2021-03-22 12:14:57', '2021-03-21 13:19:24', '');
 
 -- --------------------------------------------------------
 
@@ -128,28 +134,29 @@ INSERT INTO `kriteria` (`id`, `id_kasus`, `kriteria_nama`, `kriteria_bobot`, `kr
 --
 ALTER TABLE `alternatif`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `id_kasus` (`id_kasus`);
+  ADD KEY `alternatif_ibfk_1` (`id_kasus`);
 
 --
 -- Indeks untuk tabel `alternatif_nilai`
 --
 ALTER TABLE `alternatif_nilai`
-  ADD KEY `id_kasus` (`id_kasus`),
-  ADD KEY `id_alternatif` (`id_alternatif`),
-  ADD KEY `id_kriteria` (`id_kriteria`);
+  ADD KEY `alternatif_nilai_ibfk_1` (`id_kasus`),
+  ADD KEY `alternatif_nilai_ibfk_2` (`id_alternatif`),
+  ADD KEY `alternatif_nilai_ibfk_3` (`id_kriteria`);
 
 --
 -- Indeks untuk tabel `kasus`
 --
 ALTER TABLE `kasus`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kasus_nama` (`kasus_nama`);
 
 --
 -- Indeks untuk tabel `kriteria`
 --
 ALTER TABLE `kriteria`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `id_kasus` (`id_kasus`);
+  ADD KEY `kriteria_ibfk_1` (`id_kasus`);
 
 --
 -- AUTO_INCREMENT untuk tabel yang dibuang
@@ -159,19 +166,19 @@ ALTER TABLE `kriteria`
 -- AUTO_INCREMENT untuk tabel `alternatif`
 --
 ALTER TABLE `alternatif`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT untuk tabel `kasus`
 --
 ALTER TABLE `kasus`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT untuk tabel `kriteria`
 --
 ALTER TABLE `kriteria`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
@@ -181,21 +188,21 @@ ALTER TABLE `kriteria`
 -- Ketidakleluasaan untuk tabel `alternatif`
 --
 ALTER TABLE `alternatif`
-  ADD CONSTRAINT `alternatif_ibfk_1` FOREIGN KEY (`id_kasus`) REFERENCES `kasus` (`id`);
+  ADD CONSTRAINT `alternatif_ibfk_1` FOREIGN KEY (`id_kasus`) REFERENCES `kasus` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ketidakleluasaan untuk tabel `alternatif_nilai`
 --
 ALTER TABLE `alternatif_nilai`
-  ADD CONSTRAINT `alternatif_nilai_ibfk_1` FOREIGN KEY (`id_kasus`) REFERENCES `kasus` (`id`),
-  ADD CONSTRAINT `alternatif_nilai_ibfk_2` FOREIGN KEY (`id_alternatif`) REFERENCES `alternatif` (`id`),
-  ADD CONSTRAINT `alternatif_nilai_ibfk_3` FOREIGN KEY (`id_kriteria`) REFERENCES `kriteria` (`id`);
+  ADD CONSTRAINT `alternatif_nilai_ibfk_1` FOREIGN KEY (`id_kasus`) REFERENCES `kasus` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `alternatif_nilai_ibfk_2` FOREIGN KEY (`id_alternatif`) REFERENCES `alternatif` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `alternatif_nilai_ibfk_3` FOREIGN KEY (`id_kriteria`) REFERENCES `kriteria` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ketidakleluasaan untuk tabel `kriteria`
 --
 ALTER TABLE `kriteria`
-  ADD CONSTRAINT `kriteria_ibfk_1` FOREIGN KEY (`id_kasus`) REFERENCES `kasus` (`id`);
+  ADD CONSTRAINT `kriteria_ibfk_1` FOREIGN KEY (`id_kasus`) REFERENCES `kasus` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
